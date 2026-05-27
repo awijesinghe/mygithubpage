@@ -699,6 +699,129 @@
       .results-header{ flex-direction:column; }
       .r-score-wrap{ align-items:flex-start; }
     }
+
+    /* ─── API KEY BUTTON ─── */
+    .key-btn {
+      font-family: var(--mono); font-size: 0.6rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-dimmer); background: transparent;
+      border: 1px solid var(--border); padding: 0.28rem 0.7rem;
+      cursor: pointer; display: flex; align-items: center; gap: 0.4rem;
+      transition: all 0.2s;
+    }
+    .key-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .key-btn.has-key { color: var(--gold); border-color: rgba(212,168,67,0.3); background: var(--gold-dim); }
+
+    /* ─── MODAL ─── */
+    .modal-bg {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .modal-bg.open { display: flex; }
+
+    .modal-box {
+      background: var(--bg-2); border: 1px solid var(--border-hi);
+      width: 100%; max-width: 480px; padding: 2rem;
+      position: relative;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 40px rgba(212,168,67,0.04) inset;
+    }
+
+    .modal-box::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0.4;
+    }
+
+    .modal-title {
+      font-family: var(--serif); font-size: 1.4rem; font-style: italic;
+      color: var(--text); margin-bottom: 0.5rem;
+    }
+
+    .modal-sub {
+      font-size: 0.8rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 1.5rem;
+    }
+
+    .modal-sub a { color: var(--gold); text-decoration: none; }
+    .modal-sub a:hover { text-decoration: underline; }
+
+    .modal-input-wrap { display: flex; gap: 0; margin-bottom: 0.75rem; }
+
+    .modal-input {
+      flex: 1; font-family: var(--mono); font-size: 0.78rem;
+      background: var(--bg-3); border: 1px solid var(--border-hi); border-right: none;
+      color: var(--text); padding: 0.7rem 1rem; outline: none;
+      transition: border-color 0.2s;
+    }
+    .modal-input:focus { border-color: var(--gold); }
+    .modal-input::placeholder { color: var(--text-dimmer); }
+
+    .modal-save {
+      font-family: var(--mono); font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: var(--gold); color: var(--bg); border: none;
+      padding: 0.7rem 1.2rem; cursor: pointer; transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .modal-save:hover { background: var(--gold-hi); }
+
+    .modal-note {
+      font-family: var(--mono); font-size: 0.6rem; color: var(--text-dimmer);
+      line-height: 1.6;
+    }
+
+    .modal-clear {
+      font-family: var(--mono); font-size: 0.6rem; color: var(--crimson);
+      background: none; border: none; cursor: pointer; padding: 0.5rem 0 0;
+      display: block; transition: opacity 0.2s;
+    }
+    .modal-clear:hover { opacity: 0.7; }
+
+    .modal-close {
+      position: absolute; top: 1rem; right: 1rem;
+      font-family: var(--mono); font-size: 0.7rem; color: var(--text-dimmer);
+      background: none; border: none; cursor: pointer; padding: 0.2rem 0.4rem;
+      transition: color 0.2s;
+    }
+    .modal-close:hover { color: var(--text); }
+
+    /* ─── AI INSIGHT BOX ─── */
+    .insight-box {
+      border: 1px solid var(--border); background: var(--gold-dim);
+      padding: 1rem 1.2rem; margin-bottom: 1.5rem;
+      display: none;
+    }
+    .insight-box.visible { display: block; }
+    .insight-label {
+      font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 0.4rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .insight-label::before { content: '✦'; font-size: 0.6rem; }
+    .insight-text {
+      font-family: var(--serif); font-size: 0.95rem; font-style: italic;
+      color: var(--text); line-height: 1.65;
+    }
+
+    /* AI mode badge on results */
+    .ai-badge {
+      display: none; align-items: center; gap: 0.4rem;
+      font-family: var(--mono); font-size: 0.58rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--teal); border: 1px solid rgba(74,158,138,0.3);
+      background: var(--teal-dim); padding: 0.22rem 0.6rem; margin-left: 0.75rem;
+    }
+    .ai-badge.visible { display: inline-flex; }
+    .ai-badge::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--teal); }
+
+    /* error toast */
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+      font-family: var(--mono); font-size: 0.7rem; color: var(--crimson);
+      background: var(--bg-2); border: 1px solid rgba(196,69,90,0.3);
+      padding: 0.6rem 1.2rem; z-index: 400; display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .toast.show { display: block; animation: fadeUp 0.3s ease; }
   </style>
 </head>
 <body>
@@ -710,7 +833,10 @@
       <span class="logo-symbol">⚗</span>
       Crucible
     </div>
-    <div class="nav-status">The Great Work</div>
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <button class="key-btn" id="key-btn-landing" onclick="openKeyModal()">☿ AI Key</button>
+      <div class="nav-status">The Great Work</div>
+    </div>
   </nav>
 
   <div class="landing-body">
@@ -830,7 +956,10 @@
     <div class="logo" onclick="showView('view-landing')">
       <span class="logo-symbol">⚗</span> Crucible
     </div>
-    <div class="nav-status">New Formula</div>
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <button class="key-btn" id="key-btn-form" onclick="openKeyModal()">☿ AI Key</button>
+      <div class="nav-status">New Formula</div>
+    </div>
   </nav>
 
   <div class="form-wrap">
@@ -1097,7 +1226,10 @@
   <div class="results-view">
     <div class="results-header">
       <div>
-        <div class="r-meta">Alchemical Formula Report · <span id="r-date"></span></div>
+        <div class="r-meta">
+          Alchemical Formula Report · <span id="r-date"></span>
+          <span class="ai-badge" id="ai-badge">Claude AI</span>
+        </div>
         <div class="r-product" id="r-product">–</div>
         <div class="r-grade-badge ready" id="r-badge">☉ Transmutation ready</div>
       </div>
@@ -1111,6 +1243,11 @@
     <div class="r-body">
       <!-- MAIN -->
       <div class="r-main">
+        <div class="insight-box" id="r-insight">
+          <div class="insight-label">Oracle's Reading</div>
+          <div class="insight-text" id="r-insight-text"></div>
+        </div>
+
         <div class="sec-h">The Five Elements</div>
         <div class="elements" id="r-elements"></div>
 
@@ -1151,11 +1288,176 @@
   </div>
 </div>
 
+<!-- ═══════════════════════ API KEY MODAL ═══ -->
+<div class="modal-bg" id="key-modal" onclick="if(event.target===this)closeKeyModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeKeyModal()">✕</button>
+
+    <h3 class="modal-title">Summon the Oracle</h3>
+    <p class="modal-sub">
+      Enter your <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener">Anthropic API key</a>
+      to enable Claude AI analysis. Without a key, Crucible uses its built-in scoring model.
+      Your key is stored only in your browser's localStorage and sent directly to Anthropic — never to any other server.
+    </p>
+
+    <div class="modal-input-wrap">
+      <input class="modal-input" type="password" id="key-input"
+        placeholder="sk-ant-api03-…"
+        onkeydown="if(event.key==='Enter')saveKeyFromModal()">
+      <button class="modal-save" onclick="saveKeyFromModal()">Save</button>
+    </div>
+
+    <p class="modal-note">
+      ☿ &nbsp;Key is stored in localStorage · only sent to api.anthropic.com · never logged<br>
+      Using Claude <strong>claude-sonnet-4-6</strong> · ~$0.003–0.015 per analysis
+    </p>
+
+    <button class="modal-clear" onclick="clearKey()">✕ Clear saved key</button>
+  </div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast"></div>
+
 <script>
 'use strict';
 
 /* ─── STATE ─── */
 const state = { channels: new Set(), result: null };
+
+/* ─── API KEY MANAGEMENT ─── */
+const KEY_STORE = 'crucible_api_key';
+const getApiKey  = () => localStorage.getItem(KEY_STORE) || '';
+const saveApiKey = k  => k ? localStorage.setItem(KEY_STORE, k) : localStorage.removeItem(KEY_STORE);
+
+function openKeyModal() {
+  document.getElementById('key-input').value = getApiKey();
+  document.getElementById('key-modal').classList.add('open');
+  setTimeout(() => document.getElementById('key-input').focus(), 50);
+}
+
+function closeKeyModal() { document.getElementById('key-modal').classList.remove('open'); }
+
+function saveKeyFromModal() {
+  const val = document.getElementById('key-input').value.trim();
+  saveApiKey(val);
+  closeKeyModal();
+  updateKeyBtns();
+  showToast(val ? '☉ Claude AI enabled' : '⚠ API key cleared — using local analysis');
+}
+
+function clearKey() {
+  saveApiKey('');
+  document.getElementById('key-input').value = '';
+  updateKeyBtns();
+  showToast('⚠ API key cleared');
+}
+
+function updateKeyBtns() {
+  const has = !!getApiKey();
+  document.querySelectorAll('.key-btn').forEach(b => {
+    b.classList.toggle('has-key', has);
+    b.textContent = has ? '☿ AI: On' : '☿ AI Key';
+  });
+}
+
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+/* ─── CLAUDE API ─── */
+async function callClaude(data) {
+  const key = getApiKey();
+  if (!key) return null;
+
+  const days = data.launchDate
+    ? Math.max(0, Math.round((new Date(data.launchDate) - new Date()) / 86400000))
+    : null;
+
+  const prompt = `You are an expert startup launch strategist. Analyze this product launch and return a JSON readiness assessment. Be specific, honest, and direct — reference their actual product.
+
+PRODUCT: ${data.name}
+Category: ${data.category || 'Not specified'}
+Description: ${data.desc}
+URL: ${data.url || 'None provided'}
+
+AUDIENCE:
+ICP: ${data.icp}
+Market size: ${data.tam || 'Unknown'}
+Pricing: ${data.stage || 'Not decided'}
+Channels: ${(data.selectedChannels || []).join(', ') || 'None'}
+
+COMPETITION:
+Rivals: ${(data.competitors || []).filter(Boolean).join(', ') || 'None named'}
+Differentiator: ${data.differentiator || 'Not stated'}
+
+LAUNCH:
+Date: ${data.launchDate || 'Not set'}${days !== null ? ` (${days} days from now)` : ''}
+Build state: ${data.readiness || 'Unknown'}
+Pre-launch audience: ${data.waitlist || 'None'}
+Goal: ${data.goal || 'Not specified'}
+Prep: ${data.prep || 'None mentioned'}
+
+Return ONLY valid JSON (no markdown fences):
+{
+  "overall": <integer 0-100>,
+  "window": "<ready|caution|danger>",
+  "insight": "<2-3 sentences of specific, honest narrative about this product's launch prospects — name the product, reference their actual situation>",
+  "signals": [
+    { "key": "timing",    "score": <0-100>, "description": "<specific insight about their timing>" },
+    { "key": "market",    "score": <0-100>, "description": "<specific insight about their competitive position>" },
+    { "key": "audience",  "score": <0-100>, "description": "<specific insight about their ICP and channels>" },
+    { "key": "funnel",    "score": <0-100>, "description": "<specific insight about funnel completeness>" },
+    { "key": "messaging", "score": <0-100>, "description": "<specific insight about messaging>" }
+  ],
+  "prescriptions": [
+    { "urgency": "<high|med|low>", "title": "<concise action>", "body": "<specific actionable advice referencing their product — not generic>" }
+  ]
+}
+
+Score honestly. Prescriptions must be product-specific. Return 3-5 ordered by impact.`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${resp.status}`);
+  }
+
+  const json = await resp.json();
+  const text = json.content[0].text;
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('No JSON in Claude response');
+  return JSON.parse(match[0]);
+}
+
+function mergeAiResult(ai, data) {
+  return {
+    productName: data.name || 'Your Product',
+    overall: ai.overall,
+    window:  ai.window,
+    insight: ai.insight,
+    recs: (ai.prescriptions || []).map(p => ({ urgency: p.urgency, title: p.title, body: p.body })),
+    signals: (ai.signals || []),
+    data,
+    aiPowered: true,
+  };
+}
 
 const CHANNELS = ['Product Hunt','Reddit','Hacker News','LinkedIn','Twitter/X','Newsletter','SEO / Blog','Paid Ads','App Store','Discord','Press / PR','Influencers'];
 
@@ -1176,7 +1478,7 @@ function showView(id) {
 
 function startAnalysis() { showView('view-form'); goToStep(1); }
 
-function showDemo() {
+async function showDemo() {
   const demo = {
     name: 'Leapfrog AI', url: 'https://leapfrog.ai', category: 'ai-ml',
     desc: 'Leapfrog AI automates customer onboarding for B2B SaaS by recording your product walkthrough and auto-generating interactive tutorials — no code, no integrations required.',
@@ -1189,7 +1491,22 @@ function showDemo() {
     readiness: 'beta', waitlist: 'lg', goal: 'signups',
     prep: 'Waitlist of 450, 5 beta testimonials, 3 press contacts ready, Product Hunt hunter confirmed.',
   };
-  state.result = computeScore(demo);
+
+  showView('view-scan');
+
+  const [, aiSettled] = await Promise.allSettled([
+    runScanAnimation(demo),
+    callClaude(demo).catch(err => {
+      console.warn('Claude API:', err.message);
+      if (getApiKey()) showToast(`⚠ AI error: ${err.message} — using local analysis`);
+      return null;
+    }),
+  ]);
+
+  const ai = aiSettled.status === 'fulfilled' ? aiSettled.value : null;
+  state.result = ai ? mergeAiResult(ai, demo) : computeScore(demo);
+  document.getElementById('tx-score').textContent = state.result.overall;
+
   renderResults(state.result);
   showView('view-results');
   setTimeout(animateResults, 200);
@@ -1369,7 +1686,7 @@ function buildRecs(scores, data) {
 }
 
 /* ─── RUN ─── */
-function runAnalysis() {
+async function runAnalysis() {
   if (!validateStep(4)) return;
   const data = {
     name:        document.getElementById('f-name')?.value.trim(),
@@ -1388,110 +1705,114 @@ function runAnalysis() {
     goal:        document.getElementById('f-goal')?.value,
     prep:        document.getElementById('f-prep')?.value.trim(),
   };
-  state.result = computeScore(data);
+
   showView('view-scan');
-  runScan(state.result);
+
+  // Run animation and Claude call concurrently
+  const [, aiSettled] = await Promise.allSettled([
+    runScanAnimation(data),
+    callClaude(data).catch(err => {
+      console.warn('Claude API:', err.message);
+      if (getApiKey()) showToast(`⚠ AI error: ${err.message} — using local analysis`);
+      return null;
+    }),
+  ]);
+
+  const ai = aiSettled.status === 'fulfilled' ? aiSettled.value : null;
+  state.result = ai ? mergeAiResult(ai, data) : computeScore(data);
+  document.getElementById('tx-score').textContent = state.result.overall;
+
+  renderResults(state.result);
+  showView('view-results');
+  setTimeout(animateResults, 200);
 }
 
 /* ─── SCAN ANIMATION ─── */
-function runScan(result) {
-  const log   = document.getElementById('tx-log');
-  const bar   = document.getElementById('tx-bar');
-  const score = document.getElementById('tx-score');
-  const stat  = document.getElementById('tx-status');
-  const lbl   = document.getElementById('tx-prog-lbl');
-  const pct   = document.getElementById('tx-prog-pct');
+function runScanAnimation(data) {
+  return new Promise(resolve => {
+    const log  = document.getElementById('tx-log');
+    const bar  = document.getElementById('tx-bar');
+    const score= document.getElementById('tx-score');
+    const stat = document.getElementById('tx-status');
+    const lbl  = document.getElementById('tx-prog-lbl');
+    const pct  = document.getElementById('tx-prog-pct');
 
-  log.innerHTML = ''; score.textContent = '0'; bar.style.width = '0%';
+    log.innerHTML = ''; score.textContent = '…'; bar.style.width = '0%';
 
-  const name = result.productName;
-  const s = result.signals;
+    const hasAI = !!getApiKey();
+    const comps = (data.competitors||[]).filter(Boolean).length;
+    const chs   = (data.selectedChannels||[]).length;
 
-  const lines = [
-    ['info', `Igniting formula for "${name}"`],
-    ['info', 'Loading category benchmarks…'],
-    ['ok',   'Alchemical library: connected'],
-    ['info', 'Analysing market timing — Ignis…'],
-    ['ok',   `Ignis score: ${s.find(x=>x.key==='timing').score}/100`],
-    ['info', 'Reading seasonal demand cycles…'],
-    ['ok',   'Demand arc: ascending'],
-    [s.find(x=>x.key==='timing').score >= 75 ? 'ok' : 'warn',
-     s.find(x=>x.key==='timing').score >= 75 ? 'Launch window: OPEN' : 'Launch window: NARROW — recommend shift'],
-    ['info', 'Assaying rival alchemists — Terra…'],
-    ['ok',   `Competitors mapped: ${result.data.competitors?.filter(Boolean).length || 0}`],
-    ['info', 'Checking rival funding activity…'],
-    [s.find(x=>x.key==='market').score > 70 ? 'ok' : 'warn',
-     `Terra score: ${s.find(x=>x.key==='market').score}/100`],
-    ['info', 'Testing ICP resonance — Aer…'],
-    ['ok',   `Aer score: ${s.find(x=>x.key==='audience').score}/100`],
-    ['info', 'Scanning community heat across Reddit, HN, LinkedIn…'],
-    [s.find(x=>x.key==='audience').score > 75 ? 'ok' : 'warn',
-     `Community resonance: ${s.find(x=>x.key==='audience').score > 75 ? 'HIGH' : 'MODERATE'}`],
-    ['ok',   `Channels calibrated: ${result.data.selectedChannels?.length || 0}`],
-    ['info', 'Measuring vessel integrity — Aqua…'],
-    [s.find(x=>x.key==='funnel').score > 70 ? 'ok' : 'warn',
-     `Aqua score: ${s.find(x=>x.key==='funnel').score}/100`],
-    [result.data.waitlist !== '0' ? 'ok' : 'warn',
-     result.data.waitlist !== '0' ? 'Pre-launch audience: confirmed' : 'Pre-launch audience: VOID — critical gap'],
-    ['info', 'Distilling message purity — Mercurius…'],
-    [s.find(x=>x.key==='messaging').score > 70 ? 'ok' : 'warn',
-     `Mercurius score: ${s.find(x=>x.key==='messaging').score}/100`],
-    ['info', 'Computing 30-day projection…'],
-    ['ok',   'Projection model converged'],
-    ['info', 'Generating alchemical prescriptions…'],
-    ['ok',   `${result.recs.length} prescriptions identified`],
-    ['info', 'Calculating Transmutation Index…'],
-    ['ok',   `Transmutation Index: ${result.overall}/100`],
-    ['ok',   'The Great Work: complete.'],
-  ];
+    const lines = [
+      ['info', `Igniting formula for "${data.name}"…`],
+      ['info', 'Loading alchemical library…'],
+      ['ok',   hasAI ? 'Oracle (Claude AI): summoned' : 'Grimoire: connected'],
+      ['info', 'Purifying Ignis — market timing…'],
+      ['info', 'Cross-referencing seasonal demand cycles…'],
+      ['ok',   'Timing arc: distilled'],
+      ['info', `Assaying Terra — mapping ${comps} rival alchemist${comps !== 1 ? 's' : ''}…`],
+      ['info', 'Scanning rival funding and feature velocity…'],
+      ['ok',   'Competitive field: mapped'],
+      ['info', 'Testing Aer — ICP resonance…'],
+      ['info', 'Reading community heat on Reddit, HN, LinkedIn…'],
+      ['ok',   `${chs} channel${chs !== 1 ? 's' : ''}: calibrated`],
+      ['info', 'Measuring Aqua — vessel integrity…'],
+      [data.waitlist && data.waitlist !== '0' ? 'ok' : 'warn',
+       data.waitlist && data.waitlist !== '0' ? 'Pre-launch audience: detected' : 'Pre-launch audience: VOID'],
+      ['info', 'Auditing funnel completeness…'],
+      ['ok',   data.url ? 'Landing page: present' : '⚠ Landing page: absent'],
+      ['info', 'Refining Mercurius — message purity…'],
+      ['info', 'Testing value proposition clarity…'],
+      ['ok',   'Description: analysed'],
+      ['info', hasAI ? 'Consulting the oracle…' : 'Running transmutation model…'],
+      ['info', 'Weighing all five elements…'],
+      ['info', hasAI ? 'Awaiting oracle response…' : 'Sealing the formula…'],
+      ['ok',   'The Great Work: complete.'],
+    ];
 
-  const TOTAL = 40;
-  let done = 0, lineIdx = 0;
+    const TOTAL = 40;
+    let done = 0, lineIdx = 0;
 
-  const ts = () => {
-    const d = new Date();
-    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-  };
+    const ts = () => {
+      const d = new Date();
+      return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    };
 
-  const addLine = (type, msg) => {
-    const div = document.createElement('div');
-    div.className = 'tx-line';
-    const cls  = { ok:'t-ok', warn:'t-warn', err:'t-err', info:'t-info' }[type] || 't-info';
-    const icon = { ok:'☉', warn:'⚠', err:'✗', info:'›' }[type] || '›';
-    div.innerHTML = `<span class="ts">[${ts()}]</span> <span class="${cls}">${icon} ${msg}</span>`;
-    log.appendChild(div);
-    log.scrollTop = log.scrollHeight;
-    if (log.children.length > 12) log.removeChild(log.firstElementChild);
-  };
+    const addLine = (type, msg) => {
+      const div = document.createElement('div');
+      div.className = 'tx-line';
+      const cls  = {ok:'t-ok', warn:'t-warn', err:'t-err', info:'t-info'}[type] || 't-info';
+      const icon = {ok:'☉', warn:'⚠', err:'✗', info:'›'}[type] || '›';
+      div.innerHTML = `<span class="ts">[${ts()}]</span> <span class="${cls}">${icon} ${msg}</span>`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+      if (log.children.length > 12) log.removeChild(log.firstElementChild);
+    };
 
-  const phases = [
-    [10,'Purifying Ignis…'],[18,'Assaying Terra…'],[26,'Distilling Aer…'],
-    [34,'Testing Aqua…'],[38,'Refining Mercurius…'],[40,'Sealing the formula…'],
-  ];
+    const phases = [
+      [10,'Purifying Ignis…'], [18,'Assaying Terra…'], [26,'Distilling Aer…'],
+      [33,'Testing Aqua…'],    [38,'Refining Mercurius…'], [40, hasAI ? 'Awaiting oracle…' : 'Sealing formula…'],
+    ];
 
-  const iv = setInterval(() => {
-    if (lineIdx < lines.length) { addLine(...lines[lineIdx++]); }
-    done = Math.min(TOTAL, done+1);
-    const p = Math.round((done/TOTAL)*100);
-    bar.style.width = p+'%';
-    lbl.textContent = `${done} / ${TOTAL} elements`;
-    pct.textContent = p+'%';
-    score.textContent = Math.round((done/TOTAL)*result.overall);
+    const iv = setInterval(() => {
+      if (lineIdx < lines.length) addLine(...lines[lineIdx++]);
 
-    const phase = phases.find(([t]) => done <= t);
-    if (phase) stat.textContent = phase[1];
+      done = Math.min(TOTAL, done + 1);
+      const p = Math.round((done / TOTAL) * 100);
+      bar.style.width = p + '%';
+      lbl.textContent = `${done} / ${TOTAL} elements`;
+      pct.textContent = p + '%';
 
-    if (done >= TOTAL) {
-      clearInterval(iv);
-      score.textContent = result.overall;
-      stat.textContent = 'Transmutation complete';
-      setTimeout(() => {
-        renderResults(state.result);
-        showView('view-results');
-        setTimeout(animateResults, 200);
-      }, 900);
-    }
-  }, 175);
+      const phase = phases.find(([t]) => done <= t);
+      if (phase) stat.textContent = phase[1];
+
+      if (done >= TOTAL) {
+        clearInterval(iv);
+        stat.textContent = hasAI ? 'Awaiting oracle…' : 'Transmutation complete';
+        resolve();
+      }
+    }, 180);
+  });
 }
 
 /* ─── RENDER RESULTS ─── */
@@ -1501,13 +1822,27 @@ function renderResults(result) {
   document.getElementById('r-sub').textContent = `${result.overall} / 100`;
   document.getElementById('r-date').textContent = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
+  // AI badge
+  const aiBadge = document.getElementById('ai-badge');
+  if (aiBadge) aiBadge.classList.toggle('visible', !!result.aiPowered);
+
+  // AI insight box
+  const insightBox = document.getElementById('r-insight');
+  const insightText = document.getElementById('r-insight-text');
+  if (result.insight && insightBox && insightText) {
+    insightText.textContent = result.insight;
+    insightBox.classList.add('visible');
+  } else if (insightBox) {
+    insightBox.classList.remove('visible');
+  }
+
   const badge = document.getElementById('r-badge');
   const badgeMap = {
     ready:   ['ready',   '☉ Transmutation ready — ignite'],
     caution: ['caution', '⚠ Proceed with care'],
     danger:  ['danger',  '✗ Formula incomplete'],
   };
-  const [bc, bt] = badgeMap[result.window];
+  const [bc, bt] = badgeMap[result.window] || badgeMap.caution;
   badge.className = `r-grade-badge ${bc}`;
   badge.textContent = bt;
 
@@ -1517,13 +1852,15 @@ function renderResults(result) {
   result.signals.forEach(sig => {
     const { sym, name } = ELEMENT_SYMBOLS[sig.key];
     const cls = sig.score >= 75 ? 'gold' : sig.score >= 55 ? 'teal' : 'crimson';
-    const descs = {
+    // Use AI-provided description if available, otherwise fall back to generic
+    const fallbackDescs = {
       timing:   sig.score>=75?'Your launch window aligns with peak demand.':sig.score>=55?'Timing is adequate but not optimal.':'Timing is misaligned — rescheduling is strongly advised.',
       market:   sig.score>=75?'Strong positioning. Your secret formula is clear.':sig.score>=55?'Positioning is defined but needs sharpening.':'Market positioning is weak — the formula needs a new reagent.',
       audience: sig.score>=75?'ICP is precise and channels reach them well.':sig.score>=55?'Audience definition is partially formed.':'ICP is too broad — the solvent is impure.',
       funnel:   sig.score>=75?'Vessel is intact. Pre-launch audience is solid.':sig.score>=55?'Vessel has cracks that will leak conversion.':'Vessel is critically incomplete — launching now wastes the reaction.',
       messaging:sig.score>=75?'Message is clear and specific.':sig.score>=55?'Message exists but lacks precision.':'Messaging is base metal — requires full refinement.',
     };
+    const descs = { ...fallbackDescs, ...(sig.description ? {[sig.key]: sig.description} : {}) };
     elWrap.insertAdjacentHTML('beforeend', `
       <div class="elem-row">
         <div class="elem-head">
@@ -1728,6 +2065,7 @@ window.addEventListener('DOMContentLoaded', () => {
   bindChar('f-desc','desc-count',600);
   bindChar('f-icp','icp-count',500);
   bindChar('f-diff','diff-count',300);
+  updateKeyBtns();
 
   counter('p1', 2100, 400);
   counter('p2', 34, 600, '%');
