@@ -1,0 +1,1801 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Launch Control | Predictive Launch Telemetry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #07080d;
+      --bg-2:       #0d0f18;
+      --bg-3:       #111420;
+      --border:     rgba(255,255,255,0.07);
+      --border-hi:  rgba(255,255,255,0.13);
+      --text:       #dde1ee;
+      --text-dim:   #7a8299;
+      --text-dimmer:#3d4460;
+      --green:      #00e5a0;
+      --green-dim:  rgba(0,229,160,0.1);
+      --amber:      #f5a623;
+      --amber-dim:  rgba(245,166,35,0.1);
+      --red:        #ff4d6a;
+      --red-dim:    rgba(255,77,106,0.1);
+      --blue:       #4d9fff;
+      --mono:       'JetBrains Mono', monospace;
+      --sans:       'Inter', sans-serif;
+      --radius:     2px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px);
+      background-size: 52px 52px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ─── VIEWS ─── */
+    .view { display: none; min-height: 100vh; position: relative; z-index: 1; }
+    .view.active { display: flex; flex-direction: column; }
+
+    /* ─── NAV ─── */
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(1.5rem,5vw,3.5rem); height: 58px;
+      background: rgba(7,8,13,0.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 9px;
+      font-family: var(--mono); font-size: 0.82rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--text);
+      text-decoration: none; cursor: pointer;
+    }
+
+    .logo svg { width: 26px; height: 26px; }
+    .logo em { color: var(--green); font-style: normal; }
+
+    .nav-pill {
+      font-family: var(--mono); font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--green); border: 1px solid rgba(0,229,160,0.3);
+      background: var(--green-dim); padding: 0.3rem 0.75rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+
+    .nav-pill::before {
+      content: ''; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--green); animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ─── LANDING ─── */
+    .landing-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: clamp(3rem,8vh,6rem) clamp(1.5rem,5vw,3.5rem);
+      text-align: center;
+    }
+
+    .landing-body::before {
+      content: ''; position: absolute; top: 0; left: 50%;
+      transform: translateX(-50%); width: 800px; height: 500px;
+      background: radial-gradient(ellipse, rgba(0,229,160,0.055) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-family: var(--mono); font-size: 0.68rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--green); border: 1px solid rgba(0,229,160,0.22);
+      background: var(--green-dim); padding: 0.32rem 0.8rem; margin-bottom: 1.8rem;
+    }
+
+    .badge::before {
+      content: ''; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--green); animation: blink 2s ease-in-out infinite;
+    }
+
+    h1 {
+      font-size: clamp(2.8rem,6.5vw,5rem); font-weight: 800;
+      line-height: 1.07; letter-spacing: -0.035em; margin-bottom: 1.3rem;
+    }
+
+    h1 em { font-style: normal; color: var(--green); }
+
+    .hero-sub {
+      font-size: clamp(1rem,2vw,1.15rem); color: var(--text-dim);
+      max-width: 520px; line-height: 1.65; margin-bottom: 2.5rem;
+    }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      font-family: var(--mono); font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: var(--green); color: #07080d; border: none;
+      padding: 0.9rem 2.2rem; cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9; transform: translateY(-2px);
+      box-shadow: 0 10px 35px rgba(0,229,160,0.22);
+    }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-family: var(--mono); font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-dim); background: transparent;
+      border: 1px solid var(--border-hi); padding: 0.9rem 2rem;
+      cursor: pointer; transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-ghost:hover { border-color: var(--green); color: var(--green); }
+
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 4rem; }
+
+    /* mini dashboard teaser */
+    .teaser {
+      width: 100%; max-width: 860px;
+      border: 1px solid var(--border-hi); background: var(--bg-2);
+      overflow: hidden; position: relative;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,229,160,0.05);
+    }
+
+    .teaser::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent); opacity: 0.5;
+    }
+
+    .teaser-bar {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.6rem 1rem; border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+    }
+
+    .w-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .w-dot.r{background:#ff5f57} .w-dot.y{background:#ffbd2e} .w-dot.g{background:#28ca41}
+
+    .teaser-label {
+      font-family: var(--mono); font-size: 0.6rem; color: var(--text-dimmer);
+      letter-spacing: 0.1em; text-transform: uppercase; margin: 0 auto;
+    }
+
+    .teaser-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 1px;
+      background: var(--border);
+    }
+
+    .t-cell {
+      background: var(--bg-2); padding: 1rem 1.2rem;
+    }
+
+    .t-cell.span2 { grid-column: span 2; }
+
+    .t-lbl {
+      font-family: var(--mono); font-size: 0.58rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-dimmer); margin-bottom: 0.45rem;
+    }
+
+    .t-val {
+      font-family: var(--mono); font-size: 1.5rem; font-weight: 800; line-height: 1;
+    }
+
+    .t-val.g{color:var(--green)} .t-val.a{color:var(--amber)} .t-val.b{color:var(--blue)}
+
+    .t-sub { font-size: 0.65rem; color: var(--text-dimmer); margin-top: 0.2rem; }
+
+    .feed-mini {
+      font-family: var(--mono); font-size: 0.6rem;
+      color: var(--text-dimmer); line-height: 1.8; padding: 0.5rem 0;
+      height: 66px; overflow: hidden; position: relative;
+    }
+
+    .feed-mini::after {
+      content:''; position:absolute; bottom:0; left:0; right:0; height:18px;
+      background: linear-gradient(transparent, var(--bg-2));
+    }
+
+    .fm-ok{color:var(--green)} .fm-warn{color:var(--amber)} .fm-err{color:var(--red)}
+
+    .mini-chart { height: 70px; }
+    .mini-chart svg { width:100%; height:100%; }
+
+    .social-proof {
+      display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+      justify-content: center; margin-top: 3rem;
+    }
+
+    .sp-item {
+      text-align: center;
+    }
+
+    .sp-num {
+      font-family: var(--mono); font-size: 1.5rem; font-weight: 800; color: var(--text);
+    }
+
+    .sp-num span { color: var(--green); }
+    .sp-lbl { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.2rem; }
+
+    .sp-div { width: 1px; height: 36px; background: var(--border); }
+
+    /* ─── INPUT FORM ─── */
+    .form-view {
+      flex: 1; display: flex; flex-direction: column;
+      max-width: 720px; width: 100%;
+      margin: 0 auto; padding: clamp(2rem,5vh,4rem) clamp(1.5rem,5vw,3rem);
+    }
+
+    .step-indicator {
+      display: flex; align-items: center; gap: 0; margin-bottom: 2.5rem;
+    }
+
+    .step-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-size: 0.65rem; font-weight: 700;
+      border: 1px solid var(--border); color: var(--text-dimmer);
+      background: var(--bg-2); transition: all 0.3s; flex-shrink: 0;
+    }
+
+    .step-dot.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+    .step-dot.done { border-color: var(--green); background: var(--green); color: var(--bg); }
+
+    .step-line {
+      flex: 1; height: 1px; background: var(--border); transition: background 0.3s;
+    }
+
+    .step-line.done { background: var(--green); }
+
+    .step-label {
+      font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--green); margin-bottom: 0.5rem;
+    }
+
+    .form-title {
+      font-size: clamp(1.5rem,3.5vw,2.2rem); font-weight: 800;
+      letter-spacing: -0.025em; margin-bottom: 0.6rem;
+    }
+
+    .form-sub {
+      font-size: 0.88rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 2rem;
+    }
+
+    .field { margin-bottom: 1.4rem; }
+
+    label {
+      display: block; font-family: var(--mono); font-size: 0.65rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 0.5rem;
+    }
+
+    label span { color: var(--text-dimmer); font-size: 0.6rem; text-transform: none; letter-spacing: 0; }
+
+    input[type=text], input[type=url], input[type=date], textarea, select {
+      width: 100%; font-family: var(--mono); font-size: 0.82rem;
+      background: var(--bg-2); border: 1px solid var(--border-hi);
+      color: var(--text); padding: 0.75rem 1rem; outline: none;
+      transition: border-color 0.2s; resize: none; appearance: none;
+    }
+
+    input::placeholder, textarea::placeholder { color: var(--text-dimmer); }
+
+    input:focus, textarea:focus, select:focus { border-color: var(--green); }
+
+    select option { background: var(--bg-2); }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media(max-width:560px){ .field-row{ grid-template-columns:1fr; } }
+
+    .competitor-row {
+      display: flex; gap: 0.5rem; margin-bottom: 0.6rem; align-items: center;
+    }
+
+    .competitor-row input { flex: 1; }
+
+    .comp-num {
+      font-family: var(--mono); font-size: 0.7rem; color: var(--text-dimmer);
+      min-width: 1.2rem;
+    }
+
+    .char-count {
+      font-family: var(--mono); font-size: 0.6rem; color: var(--text-dimmer);
+      text-align: right; margin-top: 0.3rem;
+    }
+
+    .char-count.warn { color: var(--amber); }
+
+    .form-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+    }
+
+    .btn-back {
+      font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-dimmer); background: none; border: none;
+      cursor: pointer; padding: 0.6rem 0; transition: color 0.2s;
+    }
+
+    .btn-back:hover { color: var(--text); }
+
+    .btn-next {
+      font-family: var(--mono); font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: var(--green); color: var(--bg); border: none;
+      padding: 0.75rem 1.8rem; cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .btn-next:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .hint {
+      font-size: 0.75rem; color: var(--text-dimmer);
+      line-height: 1.5; margin-top: 0.4rem;
+    }
+
+    /* ─── SCAN VIEW ─── */
+    .scan-view {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 3rem clamp(1.5rem,5vw,3rem); text-align: center;
+      position: relative;
+    }
+
+    .scan-view::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 40%, rgba(0,229,160,0.04) 0%, transparent 70%);
+    }
+
+    .scan-ring {
+      width: 140px; height: 140px; position: relative; margin-bottom: 2.5rem;
+    }
+
+    .scan-ring svg { width: 100%; height: 100%; animation: spin 4s linear infinite; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .scan-ring-inner {
+      position: absolute; inset: 20px;
+      border: 1px solid rgba(0,229,160,0.15); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .scan-score {
+      font-family: var(--mono); font-size: 2.2rem; font-weight: 800;
+      color: var(--green); line-height: 1; transition: all 0.3s;
+    }
+
+    .scan-title {
+      font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .scan-status {
+      font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim);
+      letter-spacing: 0.05em; margin-bottom: 2rem;
+    }
+
+    .scan-log {
+      width: 100%; max-width: 600px; background: var(--bg-2);
+      border: 1px solid var(--border); padding: 1rem 1.2rem;
+      height: 200px; overflow: hidden; position: relative; text-align: left;
+    }
+
+    .scan-log::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 40px;
+      background: linear-gradient(transparent, var(--bg-2));
+    }
+
+    .scan-line {
+      font-family: var(--mono); font-size: 0.65rem; line-height: 1.9;
+      white-space: nowrap; overflow: hidden;
+    }
+
+    .scan-line .ts { color: var(--text-dimmer); }
+    .scan-line .s-ok { color: var(--green); }
+    .scan-line .s-warn { color: var(--amber); }
+    .scan-line .s-err { color: var(--red); }
+    .scan-line .s-info { color: var(--blue); }
+
+    .scan-progress {
+      width: 100%; max-width: 600px; margin-top: 1.5rem;
+    }
+
+    .progress-label {
+      display: flex; justify-content: space-between;
+      font-family: var(--mono); font-size: 0.62rem;
+      color: var(--text-dimmer); margin-bottom: 0.4rem;
+    }
+
+    .progress-bar {
+      height: 3px; background: var(--border); position: relative; overflow: hidden;
+    }
+
+    .progress-fill-anim {
+      height: 100%; background: var(--green);
+      transition: width 0.4s ease; width: 0%;
+    }
+
+    /* ─── RESULTS VIEW ─── */
+    .results-view {
+      flex: 1; display: flex; flex-direction: column;
+    }
+
+    .results-header {
+      padding: clamp(2rem,4vh,3rem) clamp(1.5rem,5vw,3.5rem);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+      display: flex; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; gap: 1.5rem;
+    }
+
+    .results-header-left {}
+
+    .results-meta {
+      font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-dimmer); margin-bottom: 0.5rem;
+    }
+
+    .results-product { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+
+    .results-score-wrap {
+      display: flex; flex-direction: column; align-items: flex-end;
+    }
+
+    .results-score-lbl {
+      font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-dimmer); margin-bottom: 0.3rem;
+    }
+
+    .results-score {
+      font-family: var(--mono); font-size: 3.5rem; font-weight: 900;
+      line-height: 1; color: var(--green);
+    }
+
+    .results-score-grade {
+      font-family: var(--mono); font-size: 0.7rem;
+      color: var(--text-dim); text-align: right; margin-top: 0.2rem;
+    }
+
+    .results-body {
+      display: grid; grid-template-columns: 1fr 340px;
+      gap: 0; flex: 1;
+    }
+
+    @media(max-width:900px){ .results-body{ grid-template-columns:1fr; } }
+
+    .results-main { padding: clamp(1.5rem,4vw,2.5rem); border-right: 1px solid var(--border); }
+    .results-side { padding: clamp(1.5rem,4vw,2rem); }
+
+    .section-h {
+      font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--text-dimmer);
+      padding-bottom: 0.6rem; border-bottom: 1px solid var(--border);
+      margin-bottom: 1.2rem;
+    }
+
+    /* signal bars */
+    .signal-rows { display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 2rem; }
+
+    .sig-row {}
+
+    .sig-row-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 0.3rem;
+    }
+
+    .sig-name {
+      font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    .sig-pct {
+      font-family: var(--mono); font-size: 0.8rem; font-weight: 700;
+    }
+
+    .sig-pct.g{color:var(--green)} .sig-pct.a{color:var(--amber)} .sig-pct.r{color:var(--red)}
+
+    .sig-track { height: 4px; background: var(--border); overflow: hidden; }
+
+    .sig-fill {
+      height: 100%; width: 0%; transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .sig-fill.g{background:var(--green)} .sig-fill.a{background:var(--amber)} .sig-fill.r{background:var(--red)}
+
+    .sig-desc { font-size: 0.75rem; color: var(--text-dimmer); margin-top: 0.3rem; line-height: 1.5; }
+
+    /* trajectory chart */
+    .chart-wrap {
+      border: 1px solid var(--border); background: var(--bg-2);
+      padding: 1rem 1.2rem; margin-bottom: 1.5rem;
+    }
+
+    .chart-inner { height: 120px; margin-top: 0.75rem; }
+    .chart-inner svg { width: 100%; height: 100%; }
+
+    /* recommendations */
+    .rec-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .rec-card {
+      border: 1px solid var(--border); padding: 1rem 1.1rem;
+      display: flex; gap: 0.9rem; align-items: flex-start;
+      transition: border-color 0.2s;
+    }
+
+    .rec-card:hover { border-color: var(--border-hi); }
+
+    .rec-priority {
+      font-family: var(--mono); font-size: 0.58rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.2rem 0.5rem; white-space: nowrap; margin-top: 0.1rem;
+    }
+
+    .rec-priority.high { background: var(--red-dim); color: var(--red); }
+    .rec-priority.med  { background: var(--amber-dim); color: var(--amber); }
+    .rec-priority.low  { background: var(--green-dim); color: var(--green); }
+
+    .rec-text strong { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .rec-text p { font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; }
+
+    /* side: mini metrics */
+    .metric-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+    }
+
+    .metric-row:last-of-type { border-bottom: none; }
+
+    .metric-name { font-size: 0.82rem; color: var(--text-dim); }
+
+    .metric-val {
+      font-family: var(--mono); font-size: 0.88rem; font-weight: 700;
+    }
+
+    .metric-val.g{color:var(--green)} .metric-val.a{color:var(--amber)} .metric-val.r{color:var(--red)} .metric-val.b{color:var(--blue)}
+
+    /* telemetry feed sidebar */
+    .live-feed {
+      font-family: var(--mono); font-size: 0.6rem; color: var(--text-dimmer);
+      height: 180px; overflow: hidden; position: relative; line-height: 1.9;
+      margin-top: 1rem; border: 1px solid var(--border); background: var(--bg);
+      padding: 0.7rem 0.9rem;
+    }
+
+    .live-feed::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 24px;
+      background: linear-gradient(transparent, var(--bg));
+    }
+
+    .lf-line .ts{color:var(--text-dimmer)}
+    .lf-line .ok{color:var(--green)}
+    .lf-line .warn{color:var(--amber)}
+    .lf-line .err{color:var(--red)}
+
+    /* cta bottom */
+    .results-footer {
+      border-top: 1px solid var(--border); background: var(--bg-2);
+      padding: 1.5rem clamp(1.5rem,5vw,3.5rem);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
+    }
+
+    .results-footer-text { font-size: 0.85rem; color: var(--text-dim); }
+    .results-footer-text strong { color: var(--text); }
+
+    .footer-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    .btn-sm {
+      font-family: var(--mono); font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.55rem 1.2rem; cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .btn-sm.primary { background: var(--green); color: var(--bg); border: none; }
+    .btn-sm.ghost { background: none; color: var(--text-dim); border: 1px solid var(--border-hi); }
+    .btn-sm:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    /* window badge */
+    .window-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-family: var(--mono); font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.3rem 0.75rem; border: 1px solid; margin-top: 0.3rem;
+    }
+
+    .window-badge.open { color: var(--green); border-color: rgba(0,229,160,0.3); background: var(--green-dim); }
+    .window-badge.caution { color: var(--amber); border-color: rgba(245,166,35,0.3); background: var(--amber-dim); }
+    .window-badge.closed { color: var(--red); border-color: rgba(255,77,106,0.3); background: var(--red-dim); }
+
+    /* ─── MISC ─── */
+    .scanline {
+      position: fixed; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(transparent, rgba(0,229,160,0.035), transparent);
+      animation: scanline 9s linear infinite; pointer-events: none; z-index: 999;
+    }
+
+    @keyframes scanline { 0%{top:0} 100%{top:100vh} }
+
+    .fade-in { animation: fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+
+    .tooltip {
+      font-size: 0.72rem; color: var(--text-dimmer);
+      margin-top: 0.3rem; font-style: italic;
+    }
+
+    /* validation */
+    input.invalid, textarea.invalid { border-color: var(--red); }
+
+    .error-msg {
+      font-family: var(--mono); font-size: 0.62rem; color: var(--red);
+      margin-top: 0.3rem;
+    }
+
+    @media(max-width:600px){
+      .results-score{ font-size:2.5rem; }
+      .results-header{ flex-direction:column; }
+      .results-score-wrap{ align-items:flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- ════════════════════════════════════ LANDING ═══ -->
+<div class="view active" id="view-landing">
+  <nav class="nav">
+    <div class="logo" onclick="showView('view-landing')">
+      <svg viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <circle cx="13" cy="13" r="7" stroke="rgba(0,229,160,0.55)" stroke-width="1"/>
+        <circle cx="13" cy="13" r="2.5" fill="#00e5a0"/>
+        <line x1="13" y1="1" x2="13" y2="4.5" stroke="#00e5a0" stroke-width="1.5"/>
+        <line x1="13" y1="21.5" x2="13" y2="25" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <line x1="1" y1="13" x2="4.5" y2="13" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <line x1="21.5" y1="13" x2="25" y2="13" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+      </svg>
+      Launch<em>Control</em>
+    </div>
+    <div class="nav-pill">Live telemetry</div>
+  </nav>
+
+  <div class="landing-body">
+    <div class="badge">Predictive Launch Telemetry · Early Access</div>
+
+    <h1>Know your <em>launch trajectory</em><br>before you lift off.</h1>
+
+    <p class="hero-sub">
+      Paste your product URL, describe your audience, name your rivals.
+      In 60 seconds, get a scored readiness report across 40+ signals —
+      with specific fixes ranked by impact.
+    </p>
+
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="startAnalysis()">
+        Run Free Analysis
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn-ghost" onclick="showDemo()">See demo report →</button>
+    </div>
+
+    <div class="teaser fade-in">
+      <div class="teaser-bar">
+        <div class="w-dot r"></div><div class="w-dot y"></div><div class="w-dot g"></div>
+        <span class="teaser-label">Launch Control — Telemetry Console</span>
+      </div>
+      <div class="teaser-grid">
+        <div class="t-cell">
+          <div class="t-lbl">Launch Readiness</div>
+          <div class="t-val g" id="t-readiness">87</div>
+          <div class="t-sub">▲ +4 this week</div>
+        </div>
+        <div class="t-cell">
+          <div class="t-lbl">Market Window</div>
+          <div class="t-val a">OPEN</div>
+          <div class="t-sub">~18 days remaining</div>
+        </div>
+        <div class="t-cell">
+          <div class="t-lbl">Traction Velocity</div>
+          <div class="t-val b">2.3×</div>
+          <div class="t-sub">vs category baseline</div>
+        </div>
+        <div class="t-cell span2">
+          <div class="t-lbl">30-Day Trajectory Forecast</div>
+          <div class="mini-chart">
+            <svg viewBox="0 0 420 70" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#00e5a0" stop-opacity="0.18"/>
+                  <stop offset="100%" stop-color="#00e5a0" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#4d9fff" stop-opacity="0.13"/>
+                  <stop offset="100%" stop-color="#4d9fff" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="22" x2="420" y2="22" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <line x1="0" y1="44" x2="420" y2="44" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <path d="M0,60 C30,53 70,46 120,40 C160,34 190,30 210,26" fill="none" stroke="#00e5a0" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M0,60 C30,53 70,46 120,40 C160,34 190,30 210,26 L210,70 L0,70Z" fill="url(#g1)"/>
+              <path d="M210,26 C240,22 280,14 320,9 C360,4 390,3 420,2" fill="none" stroke="#4d9fff" stroke-width="1.5" stroke-dasharray="5,4" stroke-linecap="round"/>
+              <path d="M210,26 C240,22 280,14 320,9 C360,4 390,3 420,2 L420,70 L210,70Z" fill="url(#g2)"/>
+              <line x1="210" y1="0" x2="210" y2="70" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="3,3"/>
+              <circle cx="210" cy="26" r="2.5" fill="#00e5a0"/>
+            </svg>
+          </div>
+        </div>
+        <div class="t-cell">
+          <div class="t-lbl">Live Signal Feed</div>
+          <div class="feed-mini" id="teaser-feed">
+            <div><span style="color:#3d4460">[now]</span> <span class="fm-ok">✓ ICP overlap: 94%</span></div>
+            <div><span style="color:#3d4460">[now]</span> <span class="fm-warn">⚠ Competitor funding</span></div>
+            <div><span style="color:#3d4460">[now]</span> <span class="fm-ok">✓ Timing score: 87</span></div>
+            <div><span style="color:#3d4460">[now]</span> <span class="fm-ok">✓ SEO gap confirmed</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="social-proof">
+      <div class="sp-item"><div class="sp-num"><span id="sp1">0</span>+</div><div class="sp-lbl">Launches tracked</div></div>
+      <div class="sp-div"></div>
+      <div class="sp-item"><div class="sp-num"><span id="sp2">0</span>%</div><div class="sp-lbl">Avg. readiness lift</div></div>
+      <div class="sp-div"></div>
+      <div class="sp-item"><div class="sp-num"><span id="sp3">0</span>+</div><div class="sp-lbl">Signals scanned</div></div>
+      <div class="sp-div"></div>
+      <div class="sp-item"><div class="sp-num"><span id="sp4">0</span>×</div><div class="sp-lbl">Day-1 conversion lift</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ FORM ═══ -->
+<div class="view" id="view-form">
+  <nav class="nav">
+    <div class="logo" onclick="showView('view-landing')">
+      <svg viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <circle cx="13" cy="13" r="7" stroke="rgba(0,229,160,0.55)" stroke-width="1"/>
+        <circle cx="13" cy="13" r="2.5" fill="#00e5a0"/>
+        <line x1="13" y1="1" x2="13" y2="4.5" stroke="#00e5a0" stroke-width="1.5"/>
+        <line x1="13" y1="21.5" x2="13" y2="25" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <line x1="1" y1="13" x2="4.5" y2="13" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <line x1="21.5" y1="13" x2="25" y2="13" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+      </svg>
+      Launch<em>Control</em>
+    </div>
+    <div class="nav-pill">New Analysis</div>
+  </nav>
+
+  <div class="form-view">
+    <!-- Step indicator -->
+    <div class="step-indicator" id="step-indicator">
+      <div class="step-dot active" id="sd-1">1</div>
+      <div class="step-line" id="sl-1"></div>
+      <div class="step-dot" id="sd-2">2</div>
+      <div class="step-line" id="sl-2"></div>
+      <div class="step-dot" id="sd-3">3</div>
+      <div class="step-line" id="sl-3"></div>
+      <div class="step-dot" id="sd-4">4</div>
+    </div>
+
+    <!-- Step 1: Product -->
+    <div id="step-1" class="fade-in">
+      <div class="step-label">Step 1 of 4 · Product</div>
+      <h2 class="form-title">Tell us about your product.</h2>
+      <p class="form-sub">We'll use this to score your market positioning, messaging clarity, and funnel completeness.</p>
+
+      <div class="field">
+        <label for="f-name">Product name <span>· required</span></label>
+        <input type="text" id="f-name" placeholder="e.g. Notion, Figma, Stripe" maxlength="60">
+      </div>
+
+      <div class="field">
+        <label for="f-url">Landing page URL <span>· optional but recommended</span></label>
+        <input type="url" id="f-url" placeholder="https://yourproduct.com">
+        <p class="hint">We'll score copy clarity, load time signal, and CTA completeness.</p>
+      </div>
+
+      <div class="field">
+        <label for="f-category">Category</label>
+        <select id="f-category">
+          <option value="">Select a category…</option>
+          <option value="saas-b2b">B2B SaaS</option>
+          <option value="saas-b2c">B2C SaaS / Consumer App</option>
+          <option value="marketplace">Marketplace / Platform</option>
+          <option value="api-dev">API / Developer Tool</option>
+          <option value="ai-ml">AI / ML Product</option>
+          <option value="ecomm">E-commerce / DTC</option>
+          <option value="mobile">Mobile App</option>
+          <option value="hardware">Hardware / Physical</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-desc">What problem does it solve? <span>· required</span></label>
+        <textarea id="f-desc" rows="4" placeholder="Describe the core problem and your solution in 2–4 sentences. Be specific about who suffers from this problem and how you fix it." maxlength="600"></textarea>
+        <div class="char-count" id="desc-count">0 / 600</div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="showView('view-landing')">← Back</button>
+        <button class="btn-next" onclick="nextStep(1)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Audience -->
+    <div id="step-2" style="display:none" class="fade-in">
+      <div class="step-label">Step 2 of 4 · Audience</div>
+      <h2 class="form-title">Who are you launching to?</h2>
+      <p class="form-sub">Precise ICP definition directly improves your audience heat score and channel readiness grade.</p>
+
+      <div class="field">
+        <label for="f-icp">Ideal customer profile <span>· required</span></label>
+        <textarea id="f-icp" rows="3" placeholder="e.g. Solo founders and early-stage CTOs (1–10 person team) at B2B SaaS startups who are overwhelmed by launch coordination and have failed at least one Product Hunt launch." maxlength="500"></textarea>
+        <div class="char-count" id="icp-count">0 / 500</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="f-tam">Estimated market size</label>
+          <select id="f-tam">
+            <option value="">Unknown / skip</option>
+            <option value="nano">&lt; $10M TAM</option>
+            <option value="micro">$10M – $100M</option>
+            <option value="mid">$100M – $1B</option>
+            <option value="large">$1B – $10B</option>
+            <option value="xlarge">&gt; $10B TAM</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-stage">Pricing model</label>
+          <select id="f-stage">
+            <option value="">Not decided</option>
+            <option value="free">Free / freemium</option>
+            <option value="trial">Free trial → paid</option>
+            <option value="sub">Subscription (SaaS)</option>
+            <option value="usage">Usage-based</option>
+            <option value="one-time">One-time purchase</option>
+            <option value="enterprise">Enterprise / sales-led</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-channels">Primary launch channels <span>· select the ones you plan to use</span></label>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem" id="channel-chips"></div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(2)">← Back</button>
+        <button class="btn-next" onclick="nextStep(2)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Competition -->
+    <div id="step-3" style="display:none" class="fade-in">
+      <div class="step-label">Step 3 of 4 · Competition</div>
+      <h2 class="form-title">Who are you up against?</h2>
+      <p class="form-sub">Naming your competitors powers the competitive radar — funding activity, feature velocity, and market saturation scoring.</p>
+
+      <div class="field">
+        <label>Competitors <span>· add up to 5</span></label>
+        <div id="competitor-list">
+          <div class="competitor-row"><span class="comp-num">1.</span><input type="text" placeholder="Competitor name or URL" maxlength="80"></div>
+          <div class="competitor-row"><span class="comp-num">2.</span><input type="text" placeholder="Competitor name or URL" maxlength="80"></div>
+          <div class="competitor-row"><span class="comp-num">3.</span><input type="text" placeholder="Competitor name or URL" maxlength="80"></div>
+        </div>
+        <p class="hint">No competitors? That's a signal too — we'll score market validation and category creation risk.</p>
+      </div>
+
+      <div class="field">
+        <label for="f-diff">Your primary differentiator <span>· required</span></label>
+        <textarea id="f-diff" rows="3" placeholder="What's the one thing you do that no direct competitor does? Be ruthlessly specific." maxlength="300"></textarea>
+        <div class="char-count" id="diff-count">0 / 300</div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(3)">← Back</button>
+        <button class="btn-next" onclick="nextStep(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Launch -->
+    <div id="step-4" style="display:none" class="fade-in">
+      <div class="step-label">Step 4 of 4 · Launch Plan</div>
+      <h2 class="form-title">When and how are you launching?</h2>
+      <p class="form-sub">Timing is one of the highest-impact signals. This powers our market window calculation and launch-date optimisation.</p>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="f-date">Target launch date</label>
+          <input type="date" id="f-date">
+        </div>
+        <div class="field">
+          <label for="f-readiness">Current build status</label>
+          <select id="f-readiness">
+            <option value="">Select…</option>
+            <option value="idea">Idea / concept only</option>
+            <option value="prototype">Prototype / MVP</option>
+            <option value="beta">Private beta</option>
+            <option value="soft">Soft-launched</option>
+            <option value="ready">Launch-ready</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-waitlist">Current waitlist / audience size <span>· optional</span></label>
+        <select id="f-waitlist">
+          <option value="0">None yet</option>
+          <option value="sm">1 – 100</option>
+          <option value="md">100 – 500</option>
+          <option value="lg">500 – 2,000</option>
+          <option value="xl">2,000 – 10,000</option>
+          <option value="xxl">10,000+</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-goal">Primary launch goal</label>
+        <select id="f-goal">
+          <option value="">Select…</option>
+          <option value="signups">Free signups / waitlist growth</option>
+          <option value="revenue">First paying customers</option>
+          <option value="press">Press / awareness</option>
+          <option value="ph">Product Hunt #1</option>
+          <option value="vc">Investor visibility</option>
+          <option value="community">Community building</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-prep">What launch prep have you done? <span>· optional</span></label>
+        <textarea id="f-prep" rows="3" placeholder="e.g. Built waitlist of 400, lined up 3 press mentions, prepared 5 beta testimonials, scheduled social posts…" maxlength="400"></textarea>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(4)">← Back</button>
+        <button class="btn-next" onclick="runAnalysis()">Run Analysis →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ SCAN ═══ -->
+<div class="view" id="view-scan">
+  <nav class="nav">
+    <div class="logo">
+      <svg viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <circle cx="13" cy="13" r="7" stroke="rgba(0,229,160,0.55)" stroke-width="1"/>
+        <circle cx="13" cy="13" r="2.5" fill="#00e5a0"/>
+        <line x1="13" y1="1" x2="13" y2="4.5" stroke="#00e5a0" stroke-width="1.5"/>
+        <line x1="13" y1="21.5" x2="13" y2="25" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <line x1="1" y1="13" x2="4.5" y2="13" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <line x1="21.5" y1="13" x2="25" y2="13" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+      </svg>
+      Launch<em>Control</em>
+    </div>
+    <div class="nav-pill">Scanning…</div>
+  </nav>
+
+  <div class="scan-view">
+    <div class="scan-ring">
+      <svg viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="65" fill="none" stroke="rgba(0,229,160,0.08)" stroke-width="1.5"/>
+        <circle cx="70" cy="70" r="65" fill="none" stroke="#00e5a0" stroke-width="1.5"
+          stroke-dasharray="408" stroke-dashoffset="306" stroke-linecap="round"/>
+        <circle cx="70" cy="70" r="52" fill="none" stroke="rgba(0,229,160,0.06)" stroke-width="1"/>
+        <circle cx="70" cy="70" r="52" fill="none" stroke="rgba(0,229,160,0.3)" stroke-width="1"
+          stroke-dasharray="326" stroke-dashoffset="244" stroke-linecap="round"/>
+      </svg>
+      <div class="scan-ring-inner">
+        <div class="scan-score" id="scan-score">0</div>
+      </div>
+    </div>
+
+    <h2 class="scan-title">Scanning your launch signals…</h2>
+    <p class="scan-status" id="scan-status">Initialising telemetry engine</p>
+
+    <div class="scan-log" id="scan-log"></div>
+
+    <div class="scan-progress">
+      <div class="progress-label">
+        <span id="scan-prog-label">0 / 40 signals</span>
+        <span id="scan-prog-pct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill-anim" id="scan-bar"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ RESULTS ═══ -->
+<div class="view" id="view-results">
+  <nav class="nav">
+    <div class="logo" onclick="showView('view-landing')">
+      <svg viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <circle cx="13" cy="13" r="7" stroke="rgba(0,229,160,0.55)" stroke-width="1"/>
+        <circle cx="13" cy="13" r="2.5" fill="#00e5a0"/>
+        <line x1="13" y1="1" x2="13" y2="4.5" stroke="#00e5a0" stroke-width="1.5"/>
+        <line x1="13" y1="21.5" x2="13" y2="25" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <line x1="1" y1="13" x2="4.5" y2="13" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+        <line x1="21.5" y1="13" x2="25" y2="13" stroke="rgba(0,229,160,0.35)" stroke-width="1"/>
+      </svg>
+      Launch<em>Control</em>
+    </div>
+    <div class="nav-pill">Report ready</div>
+  </nav>
+
+  <div class="results-view">
+    <div class="results-header">
+      <div class="results-header-left">
+        <div class="results-meta">Launch Readiness Report · <span id="r-date"></span></div>
+        <div class="results-product" id="r-product">–</div>
+        <div id="r-window-badge" class="window-badge open" style="margin-top:0.5rem">● LAUNCH WINDOW OPEN</div>
+      </div>
+      <div class="results-score-wrap">
+        <div class="results-score-lbl">Overall Readiness</div>
+        <div class="results-score" id="r-score">–</div>
+        <div class="results-score-grade" id="r-grade">–</div>
+      </div>
+    </div>
+
+    <div class="results-body">
+      <!-- MAIN -->
+      <div class="results-main">
+        <div class="section-h">Signal Breakdown</div>
+        <div class="signal-rows" id="r-signals"></div>
+
+        <div class="chart-wrap">
+          <div class="section-h" style="border:none;margin:0 0 0.5rem">30-Day Trajectory Forecast</div>
+          <div class="chart-inner" id="r-chart"></div>
+        </div>
+
+        <div class="section-h">Priority Actions</div>
+        <div class="rec-list" id="r-recs"></div>
+      </div>
+
+      <!-- SIDE -->
+      <div class="results-side">
+        <div class="section-h">Key Metrics</div>
+        <div id="r-metrics"></div>
+
+        <div class="section-h" style="margin-top:1.5rem">Live Signal Feed</div>
+        <div class="live-feed" id="r-feed"></div>
+
+        <div style="margin-top:1.5rem">
+          <button class="btn-sm primary" style="width:100%;justify-content:center;display:flex"
+            onclick="startAnalysis()">← Run another analysis</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-footer">
+      <div class="results-footer-text">
+        <strong>Want to improve your score?</strong> Fix the priority actions above —
+        most founders lift 10–20 points in under a week.
+      </div>
+      <div class="footer-actions">
+        <button class="btn-sm ghost" onclick="copyReport()">Copy report</button>
+        <button class="btn-sm primary" onclick="startAnalysis()">New analysis</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const state = {
+  currentStep: 1,
+  channels: new Set(),
+  result: null,
+};
+
+const CHANNELS = ['Product Hunt','Reddit','Hacker News','LinkedIn','Twitter/X','Newsletter','SEO / Blog','Paid Ads','App Store','Community / Discord','Press / PR','Influencers'];
+
+// ─── VIEW ROUTING ─────────────────────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function startAnalysis() {
+  showView('view-form');
+  goToStep(1);
+}
+
+function showDemo() {
+  // Inject demo data then jump straight to results
+  const demo = {
+    name: 'Leapfrog AI',
+    url: 'https://leapfrog.ai',
+    category: 'ai-ml',
+    desc: 'Leapfrog AI automates customer onboarding for B2B SaaS by turning product walkthroughs into interactive tutorials with zero engineering effort.',
+    icp: 'Head of Customer Success at B2B SaaS companies with 50–500 employees, ARR $1M–$20M, struggling with manual onboarding that causes churn.',
+    tam: 'mid',
+    stage: 'trial',
+    selectedChannels: ['Product Hunt','LinkedIn','Hacker News','Newsletter'],
+    competitors: ['Appcues','Userflow','Pendo'],
+    differentiator: 'Zero-code setup — records your own product walkthrough and auto-generates an interactive tutorial in minutes, no integrations required.',
+    launchDate: (() => { const d = new Date(); d.setDate(d.getDate()+14); return d.toISOString().split('T')[0]; })(),
+    readiness: 'beta',
+    waitlist: 'lg',
+    goal: 'signups',
+    prep: 'Built waitlist of 450, lined up 5 beta testimonials, have 3 press contacts ready, Product Hunt hunter confirmed.',
+  };
+  state.result = computeScore(demo);
+  renderResults(state.result);
+  showView('view-results');
+  animateResults();
+}
+
+// ─── STEP NAV ─────────────────────────────────────────────────────────────────
+function goToStep(n) {
+  for (let i=1;i<=4;i++) {
+    const el = document.getElementById(`step-${i}`);
+    if (el) el.style.display = i===n ? 'block' : 'none';
+    const dot = document.getElementById(`sd-${i}`);
+    if (dot) {
+      dot.classList.remove('active','done');
+      if (i < n) dot.classList.add('done');
+      if (i === n) dot.classList.add('active');
+    }
+    if (i < 4) {
+      const line = document.getElementById(`sl-${i}`);
+      if (line) line.classList.toggle('done', i < n);
+    }
+  }
+  state.currentStep = n;
+}
+
+function prevStep(current) { goToStep(current - 1); }
+
+function nextStep(current) {
+  if (!validateStep(current)) return;
+  goToStep(current + 1);
+}
+
+function validateStep(step) {
+  let ok = true;
+  if (step === 1) {
+    const name = document.getElementById('f-name');
+    const desc = document.getElementById('f-desc');
+    if (!name.value.trim()) { name.classList.add('invalid'); ok = false; } else name.classList.remove('invalid');
+    if (desc.value.trim().length < 30) { desc.classList.add('invalid'); ok = false; } else desc.classList.remove('invalid');
+  }
+  if (step === 2) {
+    const icp = document.getElementById('f-icp');
+    if (icp.value.trim().length < 20) { icp.classList.add('invalid'); ok = false; } else icp.classList.remove('invalid');
+  }
+  if (step === 3) {
+    const diff = document.getElementById('f-diff');
+    if (diff.value.trim().length < 15) { diff.classList.add('invalid'); ok = false; } else diff.classList.remove('invalid');
+  }
+  return ok;
+}
+
+// ─── CHANNEL CHIPS ────────────────────────────────────────────────────────────
+function buildChannelChips() {
+  const wrap = document.getElementById('channel-chips');
+  wrap.innerHTML = '';
+  CHANNELS.forEach(ch => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = ch;
+    btn.style.cssText = `
+      font-family: var(--mono); font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.05em; padding: 0.35rem 0.75rem; cursor: pointer;
+      border: 1px solid var(--border-hi); background: var(--bg-2); color: var(--text-dim);
+      transition: all 0.15s; white-space: nowrap;
+    `;
+    btn.onclick = () => {
+      if (state.channels.has(ch)) {
+        state.channels.delete(ch);
+        btn.style.background = 'var(--bg-2)';
+        btn.style.borderColor = 'var(--border-hi)';
+        btn.style.color = 'var(--text-dim)';
+      } else {
+        state.channels.add(ch);
+        btn.style.background = 'var(--green-dim)';
+        btn.style.borderColor = 'rgba(0,229,160,0.4)';
+        btn.style.color = 'var(--green)';
+      }
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+// ─── TEXTAREA CHAR COUNTS ────────────────────────────────────────────────────
+function bindCharCount(inputId, countId, max) {
+  const el = document.getElementById(inputId);
+  const ct = document.getElementById(countId);
+  if (!el || !ct) return;
+  el.addEventListener('input', () => {
+    const l = el.value.length;
+    ct.textContent = `${l} / ${max}`;
+    ct.classList.toggle('warn', l > max * 0.85);
+  });
+}
+
+// ─── SCORING ENGINE ───────────────────────────────────────────────────────────
+function computeScore(data) {
+  // Timing score: days until launch
+  let timingScore = 60;
+  if (data.launchDate) {
+    const days = Math.round((new Date(data.launchDate) - new Date()) / 86400000);
+    if (days < 0)        timingScore = 35;
+    else if (days < 7)   timingScore = 62;
+    else if (days <= 14) timingScore = 88;
+    else if (days <= 30) timingScore = 82;
+    else if (days <= 60) timingScore = 72;
+    else                 timingScore = 58;
+  }
+
+  // Market score: based on competition count + differentiator length
+  const compCount = [data.competitors?.[0], data.competitors?.[1], data.competitors?.[2]]
+    .filter(Boolean).filter(s => s.trim()).length;
+  const diffLen = (data.differentiator || data.diff || '').length;
+  let marketScore = 65;
+  if (compCount === 0)   marketScore = 54; // no validation
+  else if (compCount === 1) marketScore = 74;
+  else if (compCount === 2) marketScore = 82;
+  else if (compCount >= 3)  marketScore = 70; // crowded
+  if (diffLen > 100) marketScore = Math.min(95, marketScore + 10);
+  else if (diffLen < 40) marketScore -= 12;
+
+  // Audience score: ICP length + channels + TAM
+  const icpLen = (data.icp || '').length;
+  let audienceScore = 55;
+  if (icpLen > 200) audienceScore = 88;
+  else if (icpLen > 100) audienceScore = 76;
+  else if (icpLen > 50)  audienceScore = 62;
+  const ch = data.selectedChannels || [...state.channels];
+  if (ch.length >= 3) audienceScore = Math.min(96, audienceScore + 8);
+  const tamMap = { nano:52, micro:68, mid:82, large:88, xlarge:74 };
+  audienceScore = Math.round((audienceScore + (tamMap[data.tam] || 65)) / 2);
+
+  // Funnel score: readiness stage + prep + waitlist
+  const funnelMap = { idea:28, prototype:48, beta:68, soft:80, ready:92 };
+  const waitMap = { '0':20, sm:40, md:60, lg:78, xl:88, xxl:96 };
+  let funnelScore = (funnelMap[data.readiness] || 50) * 0.5 + (waitMap[data.waitlist] || 30) * 0.3;
+  const prepLen = (data.prep || '').length;
+  if (prepLen > 150) funnelScore += 15;
+  else if (prepLen > 50) funnelScore += 8;
+  funnelScore = Math.round(Math.min(96, funnelScore));
+
+  // Messaging clarity: desc length + specificity
+  const descLen = (data.desc || '').length;
+  let messagingScore = 50;
+  if (descLen > 300) messagingScore = 85;
+  else if (descLen > 150) messagingScore = 72;
+  else if (descLen > 60)  messagingScore = 60;
+  if (data.url && data.url.length > 8) messagingScore = Math.min(92, messagingScore + 7);
+  // bonus for specific keywords
+  const descWords = (data.desc || '').toLowerCase();
+  if (descWords.includes('instead of') || descWords.includes('unlike') || descWords.includes('without'))
+    messagingScore = Math.min(95, messagingScore + 6);
+
+  // Category modifiers
+  const catMod = { 'ai-ml': { timing: 4, market: -5 }, 'saas-b2b': { timing: 2, market: 2 },
+    'marketplace': { timing: -5, market: -3 }, 'hardware': { timing: -8, market: -5 } };
+  const mod = catMod[data.category] || {};
+  timingScore = clamp(timingScore + (mod.timing||0), 10, 99);
+  marketScore = clamp(marketScore + (mod.market||0), 10, 99);
+
+  const overall = Math.round(
+    timingScore * 0.22 +
+    marketScore * 0.28 +
+    audienceScore * 0.22 +
+    funnelScore * 0.18 +
+    messagingScore * 0.10
+  );
+
+  const window = timingScore >= 75 && marketScore >= 65 ? 'open' :
+    timingScore >= 55 || marketScore >= 55 ? 'caution' : 'closed';
+
+  // Build recs
+  const recs = buildRecs({ timingScore, marketScore, audienceScore, funnelScore, messagingScore }, data);
+
+  return {
+    productName: data.name || 'Your Product',
+    overall,
+    signals: [
+      { name: 'Market Timing',       score: timingScore,   key: 'timing'    },
+      { name: 'Market Positioning',  score: marketScore,   key: 'market'    },
+      { name: 'Audience Fit',        score: audienceScore, key: 'audience'  },
+      { name: 'Funnel Readiness',    score: funnelScore,   key: 'funnel'    },
+      { name: 'Messaging Clarity',   score: messagingScore,key: 'messaging' },
+    ],
+    window,
+    recs,
+    data,
+  };
+}
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function buildRecs(scores, data) {
+  const recs = [];
+  const sorted = Object.entries(scores).sort(([,a],[,b]) => a-b);
+
+  sorted.forEach(([key, score]) => {
+    if (score >= 80) return;
+    const p = score < 55 ? 'high' : score < 70 ? 'med' : 'low';
+
+    const recMap = {
+      timing: {
+        high: { title: 'Reschedule your launch window', body: 'Your current timing scores low. If you haven\'t fixed a date, target 12–18 days out to align with peak search demand in your category. Avoid Monday mornings and last-Friday-of-month slots.' },
+        med:  { title: 'Review launch date vs. competitive cycle', body: 'Your window is ok but not optimal. Check whether rivals have funding events or major releases due — a 5-day shift could clear your runway.' },
+        low:  { title: 'Minor timing refinement available', body: 'Consider launching Tuesday–Thursday AM for Product Hunt or SEO. Your window is solid — this is incremental.' },
+      },
+      market: {
+        high: { title: 'Sharpen your competitive differentiation', body: `You listed ${[data.competitors?.[0],data.competitors?.[1],data.competitors?.[2]].filter(Boolean).filter(s=>s.trim()).length} competitors but your differentiator needs more precision. Write a crisp "we do X, unlike [Competitor], without requiring Y" statement and embed it above the fold.` },
+        med:  { title: 'Strengthen your positioning statement', body: 'Your differentiation is partially defined. Add one concrete, measurable outcome to your headline (e.g. "in 5 minutes", "saves 4 hours/week") to pull away from generic positioning.' },
+        low:  { title: 'Refine feature-level differentiation', body: 'Your positioning is solid. Consider adding a comparison table to your landing page — it signals confidence and captures high-intent "vs." search traffic.' },
+      },
+      audience: {
+        high: { title: 'Define your ICP before launch', body: 'Without a precise ICP, your channel selection and messaging will underperform. Nail three things: job title, company stage, and the specific trigger event that makes someone buy.' },
+        med:  { title: 'Expand your launch channel mix', body: `You're planning ${([...(data.selectedChannels||state.channels)]).length} channel(s). Add one more community-native channel (Reddit, Discord, Slack) where your ICP congregates — direct community launches outperform cold traffic 3:1.` },
+        low:  { title: 'Warm up your audience pre-launch', body: 'Start posting "behind the scenes" content in your target communities 7–10 days before launch. Founders who do this see 40% higher Day 1 engagement.' },
+      },
+      funnel: {
+        high: { title: 'Complete your funnel before going live', body: `You're ${data.readiness === 'idea' ? 'still at idea stage' : 'not yet launch-ready'}. A launch with an incomplete funnel wastes your traffic spike. Minimum viable funnel: landing page + email capture + 3 social proof elements + onboarding email #1.` },
+        med:  { title: 'Build a pre-launch content buffer', body: 'Your funnel is partially ready. Prepare 5 social posts, 1 launch email, and 1 follow-up email before launch day. Pre-writing this removes execution stress when traffic spikes.' },
+        low:  { title: 'Audit your first-run experience', body: 'Your funnel looks fairly complete. Run a 5-person usability test on your onboarding — a single friction point that costs 20% of signups is common and fixable in a day.' },
+      },
+      messaging: {
+        high: { title: 'Rewrite your value proposition', body: 'Your current description is vague. Use this formula: "[Product] helps [ICP] achieve [outcome] in [timeframe] without [pain]." Test 2 variants with 5 members of your target audience before launch.' },
+        med:  { title: 'Add specificity to your headline', body: 'Your messaging exists but lacks punch. Replace adjectives with numbers: instead of "fast onboarding" try "onboard customers in 4 minutes, not 4 days."' },
+        low:  { title: 'Test your copy with target users', body: 'Run your landing page headline past 5 people in your ICP before launch. Ask: "In one sentence, what does this product do for you?" The mismatches will tell you what to tighten.' },
+      },
+    };
+
+    const rec = recMap[key]?.[p];
+    if (rec) recs.push({ priority: p, ...rec });
+  });
+
+  return recs.slice(0, 5);
+}
+
+// ─── RUN ANALYSIS ─────────────────────────────────────────────────────────────
+function runAnalysis() {
+  if (!validateStep(4)) return;
+
+  const data = {
+    name:         document.getElementById('f-name')?.value.trim(),
+    url:          document.getElementById('f-url')?.value.trim(),
+    category:     document.getElementById('f-category')?.value,
+    desc:         document.getElementById('f-desc')?.value.trim(),
+    icp:          document.getElementById('f-icp')?.value.trim(),
+    tam:          document.getElementById('f-tam')?.value,
+    stage:        document.getElementById('f-stage')?.value,
+    selectedChannels: [...state.channels],
+    competitors:  [...document.querySelectorAll('#competitor-list input')].map(i=>i.value.trim()).filter(Boolean),
+    differentiator: document.getElementById('f-diff')?.value.trim(),
+    launchDate:   document.getElementById('f-date')?.value,
+    readiness:    document.getElementById('f-readiness')?.value,
+    waitlist:     document.getElementById('f-waitlist')?.value,
+    goal:         document.getElementById('f-goal')?.value,
+    prep:         document.getElementById('f-prep')?.value.trim(),
+  };
+
+  state.result = computeScore(data);
+  showView('view-scan');
+  runScanAnimation(state.result);
+}
+
+// ─── SCAN ANIMATION ───────────────────────────────────────────────────────────
+function runScanAnimation(result) {
+  const log = document.getElementById('scan-log');
+  const bar = document.getElementById('scan-bar');
+  const scoreEl = document.getElementById('scan-score');
+  const statusEl = document.getElementById('scan-status');
+  const progLabel = document.getElementById('scan-prog-label');
+  const progPct = document.getElementById('scan-prog-pct');
+
+  log.innerHTML = '';
+  scoreEl.textContent = '0';
+  bar.style.width = '0%';
+
+  const TOTAL = 40;
+  const name = result.productName;
+
+  const allLines = [
+    ['info', `Initialising telemetry engine for "${name}"`],
+    ['info', 'Loading category benchmarks…'],
+    ['ok',   'Competitor intelligence feed: connected'],
+    ['info', 'Scanning search trend data…'],
+    ['ok',   `Market timing window analysis: ${result.signals.find(s=>s.key==='timing').score}/100`],
+    ['info', 'Checking seasonal demand patterns…'],
+    ['ok',   'Demand curve: trending positive'],
+    ['warn', 'Platform traffic dip detected — scheduling offset recommended'],
+    ['info', 'Running competitive radar…'],
+    ['ok',   `Competitors indexed: ${result.data.competitors?.filter(Boolean).length || 0}`],
+    ['info', 'Scanning competitor funding activity…'],
+    [result.signals.find(s=>s.key==='market').score > 70 ? 'ok' : 'warn',
+      `Market positioning score: ${result.signals.find(s=>s.key==='market').score}/100`],
+    ['info', 'Analysing differentiator strength…'],
+    ['ok',   'Unique value proposition: parsed'],
+    ['info', 'Running ICP match analysis…'],
+    ['ok',   `Audience fit score: ${result.signals.find(s=>s.key==='audience').score}/100`],
+    ['info', 'Scanning community activity on Reddit, HN, LinkedIn…'],
+    [result.signals.find(s=>s.key==='audience').score > 75 ? 'ok' : 'warn',
+      result.signals.find(s=>s.key==='audience').score > 75 ? 'Community heat: HIGH' : 'Community heat: MODERATE'],
+    ['info', 'Auditing channel selection…'],
+    ['ok',   `Launch channels configured: ${result.data.selectedChannels?.length || 0}`],
+    ['info', 'Evaluating funnel completeness…'],
+    [result.signals.find(s=>s.key==='funnel').score > 70 ? 'ok' : 'warn',
+      `Funnel readiness score: ${result.signals.find(s=>s.key==='funnel').score}/100`],
+    ['info', 'Checking onboarding friction points…'],
+    [result.data.waitlist !== '0' ? 'ok' : 'warn',
+      result.data.waitlist !== '0' ? 'Pre-launch audience: confirmed' : 'Pre-launch audience: ZERO — critical gap'],
+    ['info', 'Analysing landing page messaging…'],
+    [result.signals.find(s=>s.key==='messaging').score > 70 ? 'ok' : 'warn',
+      `Messaging clarity score: ${result.signals.find(s=>s.key==='messaging').score}/100`],
+    ['info', 'Checking CTA placement and copy…'],
+    [result.data.url ? 'ok' : 'warn',
+      result.data.url ? 'Landing page URL detected: analysed' : 'No landing page URL — funnel audit limited'],
+    ['info', 'Running launch-date optimisation…'],
+    ['ok',   `Target date: ${result.data.launchDate || 'not set'}`],
+    ['info', 'Computing 30-day trajectory forecast…'],
+    ['ok',   'ML model inference complete'],
+    ['info', 'Generating abort condition risk matrix…'],
+    ['ok',   'Risk matrix: 2 caution flags, 0 abort conditions'],
+    ['info', 'Compiling priority action list…'],
+    ['ok',   `${result.recs.length} priority actions identified`],
+    ['info', 'Finalising readiness report…'],
+    ['ok',   `Overall launch readiness: ${result.overall}/100`],
+  ];
+
+  let lineIdx = 0;
+  let signalsDone = 0;
+  const TARGET_SCORE = result.overall;
+
+  const now = () => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  };
+
+  const addLine = (type, msg) => {
+    const div = document.createElement('div');
+    div.className = 'scan-line';
+    const cls = type === 'ok' ? 's-ok' : type === 'warn' ? 's-warn' : type === 'err' ? 's-err' : 's-info';
+    const icon = type === 'ok' ? '✓' : type === 'warn' ? '⚠' : type === 'err' ? '✗' : '›';
+    div.innerHTML = `<span class="ts">[${now()}]</span> <span class="${cls}">${icon} ${msg}</span>`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    if (log.children.length > 12) log.removeChild(log.firstElementChild);
+  };
+
+  const interval = setInterval(() => {
+    if (lineIdx < allLines.length) {
+      const [type, msg] = allLines[lineIdx++];
+      addLine(type, msg);
+    }
+
+    signalsDone = Math.min(TOTAL, signalsDone + 1);
+    const pct = Math.round((signalsDone / TOTAL) * 100);
+    bar.style.width = pct + '%';
+    progLabel.textContent = `${signalsDone} / ${TOTAL} signals`;
+    progPct.textContent = pct + '%';
+
+    // animate score
+    const scoreProgress = Math.round((signalsDone / TOTAL) * TARGET_SCORE);
+    scoreEl.textContent = scoreProgress;
+
+    const phases = [
+      [10, 'Scanning market signals…'],
+      [20, 'Analysing competition…'],
+      [28, 'Mapping audience fit…'],
+      [35, 'Auditing funnel…'],
+      [38, 'Evaluating messaging…'],
+      [40, 'Compiling report…'],
+    ];
+    const phase = phases.find(([t]) => signalsDone <= t);
+    if (phase) statusEl.textContent = phase[1];
+
+    if (signalsDone >= TOTAL) {
+      clearInterval(interval);
+      scoreEl.textContent = TARGET_SCORE;
+      statusEl.textContent = 'Analysis complete';
+      setTimeout(() => {
+        renderResults(state.result);
+        showView('view-results');
+        animateResults();
+      }, 900);
+    }
+  }, 170);
+}
+
+// ─── RENDER RESULTS ───────────────────────────────────────────────────────────
+function renderResults(result) {
+  document.getElementById('r-product').textContent = result.productName;
+  document.getElementById('r-score').textContent = result.overall;
+  document.getElementById('r-date').textContent = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+
+  const gradeMap = [
+    [90, '🚀 Launch-ready — go for it'],
+    [75, '✅ On track — fix priority actions first'],
+    [60, '⚠️ Caution — significant gaps remain'],
+    [0,  '🔴 Not ready — address critical issues'],
+  ];
+  const grade = gradeMap.find(([t]) => result.overall >= t);
+  document.getElementById('r-grade').textContent = grade?.[1] || '–';
+
+  // Window badge
+  const wb = document.getElementById('r-window-badge');
+  const windowText = { open: '● LAUNCH WINDOW OPEN', caution: '⚠ PROCEED WITH CAUTION', closed: '✗ WINDOW CLOSED' };
+  wb.className = `window-badge ${result.window}`;
+  wb.textContent = windowText[result.window];
+
+  // Signals
+  const sigWrap = document.getElementById('r-signals');
+  sigWrap.innerHTML = '';
+  result.signals.forEach(sig => {
+    const cls = sig.score >= 75 ? 'g' : sig.score >= 55 ? 'a' : 'r';
+    const desc = {
+      timing:    sig.score >= 75 ? 'Your launch window aligns with peak demand for this category.' : sig.score >= 55 ? 'Timing is adequate but not optimal — consider a small shift.' : 'Timing is misaligned with demand. Rescheduling could significantly boost outcome.',
+      market:    sig.score >= 75 ? 'Strong positioning relative to competitors. Differentiation is clear.' : sig.score >= 55 ? 'Positioning is defined but not sharp. Tighten your differentiator.' : 'Market positioning is weak. You need a clearer competitive wedge.',
+      audience:  sig.score >= 75 ? 'Your ICP is specific and your channel mix reaches them well.' : sig.score >= 55 ? 'Audience definition is partially formed. Add more specificity.' : 'ICP is too broad. Laser-focus on one persona and one channel first.',
+      funnel:    sig.score >= 75 ? 'Funnel looks largely complete. Pre-launch audience is solid.' : sig.score >= 55 ? 'Funnel has gaps that will hurt conversion. Fix the top items before launch.' : 'Funnel has critical gaps. Launching now will waste your traffic spike.',
+      messaging: sig.score >= 75 ? 'Copy is clear and specific. Value prop is easy to understand.' : sig.score >= 55 ? 'Messaging exists but lacks punch. Add specific outcomes or timeframes.' : 'Messaging is vague. Rewrite your headline with a concrete outcome.',
+    }[sig.key] || '';
+    sigWrap.insertAdjacentHTML('beforeend', `
+      <div class="sig-row">
+        <div class="sig-row-head">
+          <span class="sig-name">${sig.name}</span>
+          <span class="sig-pct ${cls}">${sig.score}/100</span>
+        </div>
+        <div class="sig-track"><div class="sig-fill ${cls}" data-pct="${sig.score}" style="width:0%"></div></div>
+        <div class="sig-desc">${desc}</div>
+      </div>
+    `);
+  });
+
+  // Chart
+  const chartWrap = document.getElementById('r-chart');
+  const s = result.overall;
+  const peak = Math.min(99, s + 22);
+  const y = v => 110 - v * 1.05;
+  chartWrap.innerHTML = `
+    <svg viewBox="0 0 500 120" preserveAspectRatio="none" width="100%" height="100%">
+      <defs>
+        <linearGradient id="cg1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#00e5a0" stop-opacity="0.2"/>
+          <stop offset="100%" stop-color="#00e5a0" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4d9fff" stop-opacity="0.14"/>
+          <stop offset="100%" stop-color="#4d9fff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <line x1="0" y1="${y(75)}" x2="500" y2="${y(75)}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <line x1="0" y1="${y(50)}" x2="500" y2="${y(50)}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <line x1="0" y1="${y(25)}" x2="500" y2="${y(25)}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <path d="M0,${y(s*0.6)} C60,${y(s*0.75)} 120,${y(s*0.88)} 180,${y(s*0.95)} C210,${y(s*0.97)} 230,${y(s)} 250,${y(s)}"
+        fill="none" stroke="#00e5a0" stroke-width="2" stroke-linecap="round"/>
+      <path d="M0,${y(s*0.6)} C60,${y(s*0.75)} 120,${y(s*0.88)} 180,${y(s*0.95)} C210,${y(s*0.97)} 230,${y(s)} 250,${y(s)} L250,120 L0,120Z"
+        fill="url(#cg1)"/>
+      <path d="M250,${y(s)} C290,${y(s+4)} 330,${y(s+10)} 370,${y(peak-5)} C410,${y(peak-2)} 450,${y(peak)} 500,${y(peak)}"
+        fill="none" stroke="#4d9fff" stroke-width="2" stroke-dasharray="6,4" stroke-linecap="round"/>
+      <path d="M250,${y(s)} C290,${y(s+4)} 330,${y(s+10)} 370,${y(peak-5)} C410,${y(peak-2)} 450,${y(peak)} 500,${y(peak)} L500,120 L250,120Z"
+        fill="url(#cg2)"/>
+      <line x1="250" y1="0" x2="250" y2="120" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,3"/>
+      <circle cx="250" cy="${y(s)}" r="3.5" fill="#00e5a0"/>
+      <text x="60" y="115" fill="rgba(255,255,255,0.25)" font-family="JetBrains Mono" font-size="8">ACTUAL</text>
+      <text x="350" y="115" fill="rgba(77,159,255,0.5)" font-family="JetBrains Mono" font-size="8">FORECAST +30D</text>
+    </svg>
+  `;
+
+  // Recs
+  const recWrap = document.getElementById('r-recs');
+  recWrap.innerHTML = '';
+  if (result.recs.length === 0) {
+    recWrap.innerHTML = '<p style="color:var(--green);font-size:0.88rem">🚀 No critical gaps detected. Your launch is well-positioned — execute your plan.</p>';
+  } else {
+    result.recs.forEach(rec => {
+      recWrap.insertAdjacentHTML('beforeend', `
+        <div class="rec-card">
+          <span class="rec-priority ${rec.priority}">${rec.priority.toUpperCase()}</span>
+          <div class="rec-text">
+            <strong>${rec.title}</strong>
+            <p>${rec.body}</p>
+          </div>
+        </div>
+      `);
+    });
+  }
+
+  // Metrics side panel
+  const mWrap = document.getElementById('r-metrics');
+  const timeDays = result.data.launchDate
+    ? Math.max(0, Math.round((new Date(result.data.launchDate) - new Date()) / 86400000))
+    : null;
+  const metrics = [
+    { name: 'Launch window',   val: result.window === 'open' ? 'OPEN' : result.window === 'caution' ? 'CAUTION' : 'CLOSED',
+      cls: result.window === 'open' ? 'g' : result.window === 'caution' ? 'a' : 'r' },
+    { name: 'Days to launch',  val: timeDays !== null ? `${timeDays}d` : 'Not set', cls: timeDays === null ? '' : timeDays >= 10 ? 'g' : timeDays >= 5 ? 'a' : 'r' },
+    { name: 'Competitors',     val: `${result.data.competitors?.filter(Boolean).length || 0}`, cls: 'b' },
+    { name: 'Channels planned',val: `${result.data.selectedChannels?.length || 0}`, cls: result.data.selectedChannels?.length >= 3 ? 'g' : 'a' },
+    { name: 'Pre-launch audience', val: { '0':'None', sm:'1–100', md:'100–500', lg:'500–2K', xl:'2K–10K', xxl:'10K+' }[result.data.waitlist] || '–',
+      cls: ['lg','xl','xxl'].includes(result.data.waitlist) ? 'g' : result.data.waitlist === 'md' ? 'a' : 'r' },
+    { name: 'Build status',    val: { idea:'Idea', prototype:'Prototype', beta:'Beta', soft:'Soft', ready:'Ready' }[result.data.readiness] || '–',
+      cls: ['soft','ready'].includes(result.data.readiness) ? 'g' : result.data.readiness === 'beta' ? 'a' : 'r' },
+  ];
+  mWrap.innerHTML = metrics.map(m => `
+    <div class="metric-row">
+      <span class="metric-name">${m.name}</span>
+      <span class="metric-val ${m.cls}">${m.val}</span>
+    </div>
+  `).join('');
+
+  // Live feed
+  const feedEl = document.getElementById('r-feed');
+  feedEl.innerHTML = '';
+  const feedData = [
+    ['ok',   `Market timing: ${result.signals[0].score}/100 scored`],
+    ['ok',   `Competitive gap: ${result.signals[1].score >= 70 ? 'CLEAR' : 'NARROW'}`],
+    [result.signals[2].score >= 70 ? 'ok' : 'warn', `Audience heat: ${result.signals[2].score >= 70 ? 'HIGH' : 'MODERATE'}`],
+    [result.signals[3].score >= 70 ? 'ok' : 'warn', `Funnel completeness: ${result.signals[3].score}%`],
+    [result.signals[4].score >= 70 ? 'ok' : 'warn', `Messaging clarity: ${result.signals[4].score >= 70 ? 'STRONG' : 'WEAK'}`],
+    ['ok', `Signals scanned: 40/40`],
+  ];
+  feedData.forEach(([type, msg]) => {
+    const d = new Date();
+    const ts = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    const icon = type === 'ok' ? '✓' : '⚠';
+    const cls = type === 'ok' ? 'ok' : 'warn';
+    feedEl.insertAdjacentHTML('beforeend',
+      `<div class="lf-line"><span class="ts">[${ts}]</span> <span class="${cls}">${icon} ${msg}</span></div>`);
+  });
+
+  // Rotating feed
+  let idx = 0;
+  const extraFeed = [
+    ['ok', 'Demand trend: positive'],
+    ['ok', 'Search gap confirmed'],
+    ['warn', 'Press cycle: busy window'],
+    ['ok', `Category benchmark: ${result.overall >= 70 ? 'above' : 'below'} median`],
+    ['ok', 'Risk matrix: updated'],
+  ];
+  setInterval(() => {
+    const [type, msg] = extraFeed[idx % extraFeed.length]; idx++;
+    const d = new Date();
+    const ts = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    const icon = type === 'ok' ? '✓' : '⚠';
+    const cls = type === 'ok' ? 'ok' : 'warn';
+    feedEl.insertAdjacentHTML('beforeend',
+      `<div class="lf-line"><span class="ts">[${ts}]</span> <span class="${cls}">${icon} ${msg}</span></div>`);
+    feedEl.scrollTop = feedEl.scrollHeight;
+    if (feedEl.children.length > 18) feedEl.removeChild(feedEl.firstElementChild);
+  }, 3500);
+}
+
+function animateResults() {
+  setTimeout(() => {
+    document.querySelectorAll('.sig-fill').forEach(bar => {
+      bar.style.width = bar.dataset.pct + '%';
+    });
+  }, 300);
+}
+
+// ─── COPY REPORT ─────────────────────────────────────────────────────────────
+function copyReport() {
+  if (!state.result) return;
+  const r = state.result;
+  const lines = [
+    `LAUNCH CONTROL — READINESS REPORT`,
+    `Product: ${r.productName}`,
+    `Overall Score: ${r.overall}/100`,
+    `Launch Window: ${r.window.toUpperCase()}`,
+    ``,
+    `Signal Breakdown:`,
+    ...r.signals.map(s => `  ${s.name}: ${s.score}/100`),
+    ``,
+    `Priority Actions:`,
+    ...r.recs.map((rec, i) => `  ${i+1}. [${rec.priority.toUpperCase()}] ${rec.title}\n     ${rec.body}`),
+    ``,
+    `Generated by Launch Control · launch-control.app`,
+  ];
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(() => alert('Report copied to clipboard!'))
+    .catch(() => alert('Copy failed — please select and copy manually.'));
+}
+
+// ─── LANDING ANIMATIONS ───────────────────────────────────────────────────────
+function animateCounter(id, target, delay) {
+  setTimeout(() => {
+    let v = 0; const step = target / 50;
+    const t = setInterval(() => {
+      v = Math.min(v + step, target);
+      document.getElementById(id).textContent = Math.round(v);
+      if (v >= target) clearInterval(t);
+    }, 25);
+  }, delay);
+}
+
+// Teaser readiness ticker
+let teaserR = 87;
+setInterval(() => {
+  teaserR = Math.max(80, Math.min(95, teaserR + (Math.random() > 0.5 ? 1 : -1)));
+  const el = document.getElementById('t-readiness');
+  if (el) el.textContent = teaserR;
+}, 3500);
+
+// Teaser feed
+const teaserFeedLines = [
+  ['ok', 'ICP overlap: 94%'],
+  ['warn', 'Competitor funding round'],
+  ['ok', 'Timing score: 87'],
+  ['ok', 'SEO gap confirmed'],
+  ['ok', 'Audience heat: HIGH'],
+  ['warn', 'Funnel gap: onboarding'],
+  ['ok', 'Market window: OPEN'],
+];
+let tFeedIdx = 4;
+setInterval(() => {
+  const [type, msg] = teaserFeedLines[tFeedIdx % teaserFeedLines.length]; tFeedIdx++;
+  const d = new Date();
+  const ts = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  const cls = type === 'ok' ? 'fm-ok' : 'fm-warn';
+  const feed = document.getElementById('teaser-feed');
+  if (feed) {
+    feed.insertAdjacentHTML('beforeend', `<div><span style="color:#3d4460">[${ts}]</span> <span class="${cls}">${msg}</span></div>`);
+    if (feed.children.length > 6) feed.removeChild(feed.firstElementChild);
+  }
+}, 2800);
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Set default launch date 14 days out
+  const d = new Date(); d.setDate(d.getDate() + 14);
+  const dateEl = document.getElementById('f-date');
+  if (dateEl) dateEl.value = d.toISOString().split('T')[0];
+
+  buildChannelChips();
+  bindCharCount('f-desc', 'desc-count', 600);
+  bindCharCount('f-icp', 'icp-count', 500);
+  bindCharCount('f-diff', 'diff-count', 300);
+
+  // counters
+  animateCounter('sp1', 2100, 400);
+  animateCounter('sp2', 34, 600);
+  animateCounter('sp3', 40, 800);
+  animateCounter('sp4', 4, 1000);
+});
+</script>
+</body>
+</html>
